@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA picture of the day</title>
+    <link rel="stylesheet" href="./style.css"/>
+</head>
+<body>
+    <h1>NASA picture of the day</h1>
+
+    <section id="current-image-container">
+        <div class="image-display"></div>
+    </section>
+    <div class="search-container">
+        <h3>Search for a Picture of the Day</h3>
+        <form id="search-form">
+          <label for="selectDate">Select a date:</label>
+          <input type="date" id="search-input" />
+          <button type="submit" id="btn">Search</button>
+        </form>
+    </div>
+    <div class="previous-search">
+        <h3>Previous Searches</h3>
+        <ul id="search-history"></ul>
+    </div>
+
+ <script>
+    
+    const imageContainer = document.getElementById('current-image-container');
+    const form = document.getElementById('search-form');
+    const input = document.getElementById('search-input');
+    const button = document.getElementById('btn');
+    const historyList = document.getElementById('search-history');
+    const apiKey = "IEfbc097e0VPj2kfksn2bXG6gFHURA6NnrwugtLn";
+
+    document.addEventListener("DOMContentLoaded", ()=>{
+        getCurrentImageOfTheDay();
+        addSearchToHistory();
+    });
+
+    async function getCurrentImageOfTheDay(){
+       const currentDate = new Date().toString().split('T')[0];
+       await getImageData(currentDate);
+    }
+     async function getImageOfTheDay(date){
+        await getImageData(date);
+        saveSearch(date);
+        addSearchToHistory();
+     }
+     async function getImageData(date){
+        try{
+            const response = await fetch(`https://api.nasa.gov/planetary/apod?date=${date}&api_key=${apiKey}`);
+            const data = await response.json();
+            displayImage(data);
+        }catch(error){
+            console.error('Error fetching data', error);
+        }
+     }
+     function displayImage(data){
+        imageContainer.innerHTML = `
+          <p><b>Picture On: </b> ${data.date}</p>
+          ${data.media_type === "image"
+           ? `<img src="${data.url}" alt="${data.title}" />`
+           : `<iframe width="560" height="315" src="${data.url}" frameborder="0" allowfullscreen></iframe>`
+          }
+            <h3>${data.title}</h3>
+           <p>${data.explanation}</p>
+        `;
+     }
+     function saveSearch(date){
+        let searches = JSON.parse(localStorage.getItem("searches")) || [];
+        if(!searches.includes(date)){
+            searches.push(date);
+            localStorage.setItem("searches",JSON.stringify(searches));
+        }
+     }
+     function addSearchToHistory(){
+        const searches = JSON.parse(localStorage.getItem("searches")) || [];
+        historyList.innerHTML = "";
+        searches.forEach(date =>{
+            const li = document.createElement("li");
+            li.textContent = date;
+            li.addEventListener("click", ()=> getImageData(date));
+            historyList.appendChild(li);
+        });
+     }
+     form.addEventListener("submit", (e)=>{
+        e.preventDefault();
+        const date = input.value;
+        if(!date){
+            alert("please select a date");
+            return;
+        }
+        getImageOfTheDay(date);
+     });
+ </script>
+</body>
+</html>
